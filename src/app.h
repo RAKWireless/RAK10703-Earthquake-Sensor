@@ -128,6 +128,8 @@ void app_event_handler(void);
 void ble_data_handler(void) __attribute__((weak));
 void lora_data_handler(void);
 extern uint8_t g_last_fport;
+uint8_t get_min_dr(uint16_t region, uint16_t payload_size);
+bool check_dr_valid(uint16_t payload_size);
 
 /** Temperature + Humidity stuff */
 bool init_rak1901(void);
@@ -139,6 +141,7 @@ bool calib_rak12027(void);
 void threshold_rak12027(uint8_t new_threshold);
 bool read_rak12027(bool add_values);
 uint8_t check_event_rak12027(bool is_int1);
+void rak12027_get_last(float *last_values);
 extern bool shutoff_alert;
 extern bool collapse_alert;
 extern bool earthquake_end;

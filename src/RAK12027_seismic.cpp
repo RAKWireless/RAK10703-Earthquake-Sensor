@@ -160,6 +160,7 @@ bool init_rak12027(void)
 	//--- SETTINGS ---
 	// setting the D7S to switch the axis at inizialization time
 	MYLOG("SEIS", "Setting D7S sensor to switch axis at inizialization time.");
+	// AT_PRINTF("EVT: Setting D7S sensor to switch axis at inizialization time.\n");
 	D7S.setAxis(SWITCH_AT_INSTALLATION);
 
 	/*********************************************************************/
@@ -167,7 +168,8 @@ bool init_rak12027(void)
 	/*********************************************************************/
 	if (!calib_rak12027())
 	{
-		MYLOG("SEIS", "Calibration failed with timeout");
+		// MYLOG("SEIS", "Calibration failed with timeout");
+		AT_PRINTF("EVT: Calibration failed with timeout\n");
 		return false;
 	}
 
@@ -209,7 +211,7 @@ bool init_rak12027(void)
 bool calib_rak12027(void)
 {
 	//--- INITIALIZZATION ---
-	MYLOG("SEIS", "Initializing the D7S sensor in 2 seconds. Please keep it steady during the initializing process.");
+	AT_PRINTF("EVT: Initializing the D7S sensor in 2 seconds. Please keep it steady during the initializing process.\n");
 	delay(2000);
 	MYLOG("SEIS", "Initializing...");
 	// start the initial installation procedure
@@ -352,4 +354,19 @@ bool read_rak12027(bool add_values)
 	MYLOG("SEIS", "SI level %.4f", lastSI);
 	MYLOG("SEIS", "PGA level %.4f", lastPGA);
 	return true;
+}
+
+/**
+ * @brief Get last SI and PGA values
+ *
+ * @return float[] First 5 are last SI values, last 5 values are the latest PGA values
+ */
+ void rak12027_get_last(float * last_values)
+{
+	for (int idx = 0; idx < 5; idx++)
+	{
+		last_values[idx] = D7S.getLastestSI(idx);
+		last_values[idx + 5] = D7S.getLastestPGA(idx);
+	}
+	return;
 }

@@ -185,6 +185,7 @@ void app_event_handler(void)
 				case 4:
 					// Earthquake start
 					MYLOG("APP", "Earthquake start alert!");
+					AT_PRINTF("+EVT:EARTHQUAKE\n");
 					read_rak12027(false);
 					earthquake_end = false;
 					g_solution_data.addPresence(LPP_CHANNEL_EQ_EVENT, true);
@@ -196,6 +197,7 @@ void app_event_handler(void)
 				case 5:
 					// Earthquake end
 					MYLOG("APP", "Earthquake end alert!");
+					AT_PRINTF("+EVT:EARTHQUAKE_END\n");
 					read_rak12027(true);
 					earthquake_end = true;
 					g_solution_data.addPresence(LPP_CHANNEL_EQ_SHUTOFF, shutoff_alert);
@@ -228,22 +230,26 @@ void app_event_handler(void)
 					// Collapse alert
 					collapse_alert = true;
 					MYLOG("APP", "Earthquake collapse alert!");
+					AT_PRINTF("+EVT:COLLAPSE\n");
 					break;
 				case 2:
 					// ShutDown alert
 					shutoff_alert = true;
 					MYLOG("APP", "Earthquake shutoff alert!");
+					AT_PRINTF("+EVT:SHUTOFF\n");
 					break;
 				case 3:
 					// Collapse & ShutDown alert
 					collapse_alert = true;
 					shutoff_alert = true;
 					MYLOG("APP", "Earthquake collapse & shutoff alert!");
+					AT_PRINTF("+EVT:COLLAPSE_SHUTOFF\n");
 					break;
 				default:
 					// False alert
 					digitalWrite(LED_BLUE, LOW);
 					MYLOG("APP", "Earthquake false alert!");
+					AT_PRINTF("+EVT:FALSE_ALERT\n");
 					break;
 				}
 				return;
@@ -269,6 +275,21 @@ void app_event_handler(void)
 
 		if (g_lpwan_has_joined)
 		{
+			// Make sure we have a DR that allows the package size
+			uint8_t proposed_dr = get_min_dr(g_lorawan_settings.lora_region, g_solution_data.getSize());
+			if (proposed_dr != 16)
+			{
+				lmh_datarate_set(proposed_dr, g_lorawan_settings.adr_enabled);
+				MYLOG("APP", "Using DR %d", proposed_dr);
+
+				// Double check if the DR is ok (potentially there are added MAC commands)
+				if (!check_dr_valid(g_solution_data.getSize()))
+				{
+					lmh_datarate_set(proposed_dr + 1, g_lorawan_settings.adr_enabled);
+					MYLOG("APP", "Adjusted DR %d", proposed_dr + 1);
+				}
+			}
+
 			lmh_error_status result = send_lora_packet(g_solution_data.getBuffer(), g_solution_data.getSize());
 			switch (result)
 			{
@@ -358,6 +379,7 @@ void lora_data_handler(void)
 		if (g_join_result)
 		{
 			MYLOG("APP", "Successfully joined network");
+			AT_PRINTF("+EVT:JOINED\n");
 			// Reset join failed counter
 			join_or_send_fail = 0;
 
@@ -368,6 +390,7 @@ void lora_data_handler(void)
 		else
 		{
 			MYLOG("APP", "Join network failed");
+			AT_PRINTF("+EVT:JOIN_ERROR\n");
 			/// \todo here join could be restarted.
 			lmh_join();
 

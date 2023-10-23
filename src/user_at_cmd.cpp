@@ -169,7 +169,7 @@ int at_set_threshold(char *str)
  */
 int at_query_threshold(void)
 {
-	// Wet calibration value query
+	// Threshold value query
 	AT_PRINTF("threshold is %s", threshold_level == 1 ? "low" : "high");
 	return 0;
 }
@@ -194,7 +194,7 @@ void read_threshold_settings(void)
 }
 
 /**
- * @brief Save the GPS settings
+ * @brief Save the threshold settings
  *
  */
 void save_threshold_settings(uint8_t sens_level)
@@ -217,6 +217,34 @@ atcmd_t g_user_at_cmd_list_threshold[] = {
 	/*|    CMD    |     AT+CMD?      |    AT+CMD=?    |  AT+CMD=value |  AT+CMD  | AT permission */
 	// Seismic threshold commands
 	{"+SENS", "Set Seismic threshold 1 = low, 0 = high", at_query_threshold, at_set_threshold, at_query_threshold, "RW"},
+};
+
+/*****************************************
+ * Seismic Sensor last values AT commands
+ *****************************************/
+
+/**
+ * @brief Get last Seismic values
+ *
+ * @return int 0
+ */
+int at_query_values(void)
+{
+	// Get last sensor values
+	float last_values[10] = {-1.0};
+	rak12027_get_last(last_values);
+	AT_PRINTF("Last Sensor Values:");
+	for (int idx=0; idx < 5; idx++)
+	{
+		AT_PRINTF("%d SI: %.4f PGA: %.4f", idx, last_values[idx], last_values[idx + 5]);
+	}
+	return 0;
+}
+
+atcmd_t g_user_at_cmd_list_values[] = {
+	/*|    CMD    |     AT+CMD?      |    AT+CMD=?    |  AT+CMD=value |  AT+CMD  | AT permission */
+	// Seismic threshold commands
+	{"+SENSVAL", "Get last Seismic values", at_query_values, NULL, NULL, "RW"},
 };
 
 /** Number of user defined AT commands */
@@ -254,6 +282,12 @@ void init_user_at(void)
 	memcpy((void *)&g_user_at_cmd_list[index_next_cmds], (void *)g_user_at_cmd_list_threshold, sizeof(g_user_at_cmd_list_threshold));
 	index_next_cmds += sizeof(g_user_at_cmd_list_threshold) / sizeof(atcmd_t);
 	MYLOG("USR_AT", "Index after adding threshold check %d", index_next_cmds);
+
+	MYLOG("USR_AT", "Adding last values AT commands");
+	g_user_at_cmd_num += sizeof(g_user_at_cmd_list_values) / sizeof(atcmd_t);
+	memcpy((void *)&g_user_at_cmd_list[index_next_cmds], (void *)g_user_at_cmd_list_values, sizeof(g_user_at_cmd_list_values));
+	index_next_cmds += sizeof(g_user_at_cmd_list_values) / sizeof(atcmd_t);
+	MYLOG("USR_AT", "Index after adding last values check %d", index_next_cmds);
 
 	if (has_rak12002)
 	{
